@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
   repository_dispatch:
 
-env:
-  GH_TOKEN: ${{ secrets.GH_TOKEN }}
-  OVERRIDE_GIT_DESCRIBE: ${{ inputs.override_git_describe }}
+# env:
+#   GH_TOKEN: ${{ secrets.GH_TOKEN }}
+#   OVERRIDE_GIT_DESCRIBE: ${{ inputs.override_git_describe }}
 
 jobs:
   format_check:
