@@ -155,46 +155,46 @@ jobs:
   # #           build/release/duckdb_jdbc.jar
 
 
-  # java-osx-universal:
-  #   name: Java OSX (Universal)
-  #   runs-on: macos-14
-  #   needs: java-linux-amd64
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #       with:
-  #         fetch-depth: 0
-  #         ref: ${{ inputs.git_ref }}
-  #     - uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.12"
-  #     - name: Setup Ccache
-  #       uses: hendrikmuhs/ccache-action@main
-  #       with:
-  #         key: ${{ github.job }}
-  #         save: ${{ github.ref == 'refs/heads/main' }}
-  #     - name: Build
-  #       shell: bash
-  #       run: make release
-  #     - name: Java Tests
-  #       if: ${{ inputs.skip_tests != 'true' }}
-  #       shell: bash
-  #       run: make test
-  #     - name: See if this actually universal
-  #       shell: bash
-  #       run: lipo -archs build/release/libduckdb_java.so_osx_universal | grep "x86_64 arm64"
-  #     - name: Deploy
-  #       shell: bash
-  #       env:
-  #         AWS_ACCESS_KEY_ID: ${{ secrets.S3_DUCKDB_STAGING_ID }}
-  #         AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_DUCKDB_STAGING_KEY }}
-  #       run: |
-  #         cp build/release/duckdb_jdbc.jar duckdb_jdbc-osx-universal.jar
-  #         ./scripts/upload-assets-to-staging.sh github_release duckdb_jdbc-osx-universal.jar
-  #     - uses: actions/upload-artifact@v3
-  #       with:
-  #         name: java-osx-universal
-  #         path: |
-  #           build/release/duckdb_jdbc.jar
+  java-osx-universal:
+    name: Java OSX (Universal)
+    runs-on: macos-14
+    needs: java-linux-amd64
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.git_ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Setup Ccache
+        uses: hendrikmuhs/ccache-action@main
+        with:
+          key: ${{ github.job }}
+          save: ${{ github.ref == 'refs/heads/main' }}
+      - name: Build
+        shell: bash
+        run: make release
+      - name: Java Tests
+        if: ${{ inputs.skip_tests != 'true' }}
+        shell: bash
+        run: make test
+      - name: See if this actually universal
+        shell: bash
+        run: lipo -archs build/release/libduckdb_java.so_osx_universal | grep "x86_64 arm64"
+      # - name: Deploy
+      #   shell: bash
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.S3_DUCKDB_STAGING_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_DUCKDB_STAGING_KEY }}
+      #   run: |
+      #     cp build/release/duckdb_jdbc.jar duckdb_jdbc-osx-universal.jar
+      #     ./scripts/upload-assets-to-staging.sh github_release duckdb_jdbc-osx-universal.jar
+      - uses: actions/upload-artifact@v3
+        with:
+          name: java-osx-universal
+          path: |
+            build/release/duckdb_jdbc.jar
 
 
   java-combine:
