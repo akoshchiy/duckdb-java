@@ -67,134 +67,134 @@ jobs:
           path: |
             build/release/duckdb_jdbc.jar
 
-  java-linux-aarch64:
-    name: Java Linux (aarch64)
-    runs-on: ubuntu-latest
-    container:
-      image: ubuntu:18.04
-    needs: java-linux-amd64
-    env:
-      GEN: ninja
-      DUCKDB_PLATFORM: linux_arm64
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.git_ref }}
+  # java-linux-aarch64:
+  #   name: Java Linux (aarch64)
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: ubuntu:18.04
+  #   needs: java-linux-amd64
+  #   env:
+  #     GEN: ninja
+  #     DUCKDB_PLATFORM: linux_arm64
+  #     ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
+  #         ref: ${{ inputs.git_ref }}
 
-      - uses: ./.github/actions/ubuntu_18_setup
-        with:
-          ccache: 1
-          aarch64_cross_compile: 1
+  #     - uses: ./.github/actions/ubuntu_18_setup
+  #       with:
+  #         ccache: 1
+  #         aarch64_cross_compile: 1
 
-      - name: Install Stuff
-        shell: bash
-        run: >
-          curl -L https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u345-b01/OpenJDK8U-jdk_x64_linux_hotspot_8u345b01.tar.gz | tar xvz
+  #     - name: Install Stuff
+  #       shell: bash
+  #       run: >
+  #         curl -L https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u345-b01/OpenJDK8U-jdk_x64_linux_hotspot_8u345b01.tar.gz | tar xvz
 
-      - name: Build
-        shell: bash
-        run: CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ OVERRIDE_JDBC_OS_ARCH=arm64 make release
+  #     - name: Build
+  #       shell: bash
+  #       run: CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ OVERRIDE_JDBC_OS_ARCH=arm64 make release
 
-      - name: Deploy
-        shell: bash
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_DUCKDB_STAGING_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_DUCKDB_STAGING_KEY }}
-        run: |
-          cp build/release/duckdb_jdbc.jar duckdb_jdbc-linux-aarch64.jar
-         # ./scripts/upload-assets-to-staging.sh github_release duckdb_jdbc-linux-aarch64.jar
+  #     - name: Deploy
+  #       shell: bash
+  #       env:
+  #         AWS_ACCESS_KEY_ID: ${{ secrets.S3_DUCKDB_STAGING_ID }}
+  #         AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_DUCKDB_STAGING_KEY }}
+  #       run: |
+  #         cp build/release/duckdb_jdbc.jar duckdb_jdbc-linux-aarch64.jar
+  #        # ./scripts/upload-assets-to-staging.sh github_release duckdb_jdbc-linux-aarch64.jar
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: java-linux-aarch64
-          path: |
-            build/release/duckdb_jdbc.jar
-
-
-  java-windows-amd64:
-    name: Java Windows (amd64)
-    runs-on: windows-latest
-    needs: java-linux-amd64
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.git_ref }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Setup Ccache
-        uses: hendrikmuhs/ccache-action@main
-        with:
-          key: ${{ github.job }}
-          save: ${{ github.ref == 'refs/heads/main' || github.repository != 'duckdb/duckdb-java' }}
-
-      - name: Build
-        shell: bash
-        run: make release
-      - name: Java Tests
-        if: ${{ inputs.skip_tests != 'true' }}
-        shell: bash
-        run: |
-          ls -R .
-          make test
-      - name: Deploy
-        shell: bash
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_DUCKDB_STAGING_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_DUCKDB_STAGING_KEY }}
-        run: |
-          cp build/release/duckdb_jdbc.jar duckdb_jdbc-windows-amd64.jar
-          ./scripts/upload-assets-to-staging.sh github_release duckdb_jdbc-windows-amd64.jar
-      - uses: actions/upload-artifact@v3
-        with:
-          name: java-windows-amd64
-          path: |
-            build/release/duckdb_jdbc.jar
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         name: java-linux-aarch64
+  #         path: |
+  #           build/release/duckdb_jdbc.jar
 
 
-  java-osx-universal:
-    name: Java OSX (Universal)
-    runs-on: macos-14
-    needs: java-linux-amd64
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.git_ref }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Setup Ccache
-        uses: hendrikmuhs/ccache-action@main
-        with:
-          key: ${{ github.job }}
-          save: ${{ github.ref == 'refs/heads/main' }}
-      - name: Build
-        shell: bash
-        run: make release
-      - name: Java Tests
-        if: ${{ inputs.skip_tests != 'true' }}
-        shell: bash
-        run: make test
-      - name: See if this actually universal
-        shell: bash
-        run: lipo -archs build/release/libduckdb_java.so_osx_universal | grep "x86_64 arm64"
-      - name: Deploy
-        shell: bash
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_DUCKDB_STAGING_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_DUCKDB_STAGING_KEY }}
-        run: |
-          cp build/release/duckdb_jdbc.jar duckdb_jdbc-osx-universal.jar
-          ./scripts/upload-assets-to-staging.sh github_release duckdb_jdbc-osx-universal.jar
-      - uses: actions/upload-artifact@v3
-        with:
-          name: java-osx-universal
-          path: |
-            build/release/duckdb_jdbc.jar
+  # # java-windows-amd64:
+  # #   name: Java Windows (amd64)
+  # #   runs-on: windows-latest
+  # #   needs: java-linux-amd64
+  # #   steps:
+  # #     - uses: actions/checkout@v3
+  # #       with:
+  # #         fetch-depth: 0
+  # #         ref: ${{ inputs.git_ref }}
+  # #     - uses: actions/setup-python@v5
+  # #       with:
+  # #         python-version: "3.12"
+  # #     - name: Setup Ccache
+  # #       uses: hendrikmuhs/ccache-action@main
+  # #       with:
+  # #         key: ${{ github.job }}
+  # #         save: ${{ github.ref == 'refs/heads/main' || github.repository != 'duckdb/duckdb-java' }}
+
+  # #     - name: Build
+  # #       shell: bash
+  # #       run: make release
+  # #     - name: Java Tests
+  # #       if: ${{ inputs.skip_tests != 'true' }}
+  # #       shell: bash
+  # #       run: |
+  # #         ls -R .
+  # #         make test
+  # #     - name: Deploy
+  # #       shell: bash
+  # #       env:
+  # #         AWS_ACCESS_KEY_ID: ${{ secrets.S3_DUCKDB_STAGING_ID }}
+  # #         AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_DUCKDB_STAGING_KEY }}
+  # #       run: |
+  # #         cp build/release/duckdb_jdbc.jar duckdb_jdbc-windows-amd64.jar
+  # #         ./scripts/upload-assets-to-staging.sh github_release duckdb_jdbc-windows-amd64.jar
+  # #     - uses: actions/upload-artifact@v3
+  # #       with:
+  # #         name: java-windows-amd64
+  # #         path: |
+  # #           build/release/duckdb_jdbc.jar
+
+
+  # java-osx-universal:
+  #   name: Java OSX (Universal)
+  #   runs-on: macos-14
+  #   needs: java-linux-amd64
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
+  #         ref: ${{ inputs.git_ref }}
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: "3.12"
+  #     - name: Setup Ccache
+  #       uses: hendrikmuhs/ccache-action@main
+  #       with:
+  #         key: ${{ github.job }}
+  #         save: ${{ github.ref == 'refs/heads/main' }}
+  #     - name: Build
+  #       shell: bash
+  #       run: make release
+  #     - name: Java Tests
+  #       if: ${{ inputs.skip_tests != 'true' }}
+  #       shell: bash
+  #       run: make test
+  #     - name: See if this actually universal
+  #       shell: bash
+  #       run: lipo -archs build/release/libduckdb_java.so_osx_universal | grep "x86_64 arm64"
+  #     - name: Deploy
+  #       shell: bash
+  #       env:
+  #         AWS_ACCESS_KEY_ID: ${{ secrets.S3_DUCKDB_STAGING_ID }}
+  #         AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_DUCKDB_STAGING_KEY }}
+  #       run: |
+  #         cp build/release/duckdb_jdbc.jar duckdb_jdbc-osx-universal.jar
+  #         ./scripts/upload-assets-to-staging.sh github_release duckdb_jdbc-osx-universal.jar
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         name: java-osx-universal
+  #         path: |
+  #           build/release/duckdb_jdbc.jar
 
 
   # java-combine:
