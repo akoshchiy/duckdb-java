@@ -38,27 +38,29 @@ release_tag = sys.argv[1]
 deploy_url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
 is_release = True
 
-if release_tag == 'main':
-    # for SNAPSHOT builds we increment the minor version and set patch level to zero.
-    # seemed the most sensible
-    last_tag = exec('git tag --sort=-committerdate').decode('utf8').split('\n')[0]
-    re_result = version_regex.search(last_tag)
-    if re_result is None:
-        raise ValueError("Could not parse last tag %s" % last_tag)
-    release_version = "%d.%d.0-SNAPSHOT" % (int(re_result.group(2)), int(re_result.group(3)) + 1)
-    # orssh uses a different deploy url for snapshots yay
-    deploy_url = 'https://oss.sonatype.org/content/repositories/snapshots/'
-    is_release = False
-elif version_regex.match(release_tag):
-    release_version = version_regex.search(release_tag).group(1)
-else:
-    print("Not running on %s" % release_tag)
-    exit(0)
+# if release_tag == 'main':
+#     # for SNAPSHOT builds we increment the minor version and set patch level to zero.
+#     # seemed the most sensible
+#     last_tag = exec('git tag --sort=-committerdate').decode('utf8').split('\n')[0]
+#     re_result = version_regex.search(last_tag)
+#     if re_result is None:
+#         raise ValueError("Could not parse last tag %s" % last_tag)
+#     release_version = "%d.%d.0-SNAPSHOT" % (int(re_result.group(2)), int(re_result.group(3)) + 1)
+#     # orssh uses a different deploy url for snapshots yay
+#     deploy_url = 'https://oss.sonatype.org/content/repositories/snapshots/'
+#     is_release = False
+# elif version_regex.match(release_tag):
+#     release_version = version_regex.search(release_tag).group(1)
+# else:
+#     print("Not running on %s" % release_tag)
+#     exit(0)
+release_version = '1.0.0-SNAPSHOT'
 
 jdbc_artifact_dir = sys.argv[2]
 jdbc_root_path = sys.argv[3]
 
-combine_builds = ['linux-amd64', 'osx-universal', 'windows-amd64', 'linux-aarch64']
+# combine_builds = ['linux-amd64', 'osx-universal', 'windows-amd64', 'linux-aarch64']
+combine_builds = ['linux-amd64', 'osx-universal']
 
 staging_dir = tempfile.mkdtemp()
 
@@ -178,24 +180,24 @@ if not os.path.exists(results_dir):
 for jar in [binary_jar, sources_jar, javadoc_jar]:
     shutil.copyfile(jar, os.path.join(results_dir, os.path.basename(jar)))
 
-print("JARs created, uploading (this can take a while!)")
-deploy_cmd_prefix = 'mvn gpg:sign-and-deploy-file -Durl=%s -DrepositoryId=ossrh' % deploy_url
-exec("%s -DpomFile=%s -Dfile=%s" % (deploy_cmd_prefix, pom, binary_jar))
-exec("%s -Dclassifier=sources -DpomFile=%s -Dfile=%s" % (deploy_cmd_prefix, pom, sources_jar))
-exec("%s -Dclassifier=javadoc -DpomFile=%s -Dfile=%s" % (deploy_cmd_prefix, pom, javadoc_jar))
+# print("JARs created, uploading (this can take a while!)")
+# deploy_cmd_prefix = 'mvn gpg:sign-and-deploy-file -Durl=%s -DrepositoryId=ossrh' % deploy_url
+# exec("%s -DpomFile=%s -Dfile=%s" % (deploy_cmd_prefix, pom, binary_jar))
+# exec("%s -Dclassifier=sources -DpomFile=%s -Dfile=%s" % (deploy_cmd_prefix, pom, sources_jar))
+# exec("%s -Dclassifier=javadoc -DpomFile=%s -Dfile=%s" % (deploy_cmd_prefix, pom, javadoc_jar))
 
 
-if not is_release:
-    print("Not a release, not closing repo")
-    exit(0)
+# if not is_release:
+#     print("Not a release, not closing repo")
+#     exit(0)
 
-print("Close/Release steps")
-# # beautiful
-os.environ["MAVEN_OPTS"] = '--add-opens=java.base/java.util=ALL-UNNAMED'
+# print("Close/Release steps")
+# # # beautiful
+# os.environ["MAVEN_OPTS"] = '--add-opens=java.base/java.util=ALL-UNNAMED'
 
-# this list has horrid output, lets try to parse. What we want starts with orgduckdb- and then a number
-repo_id = re.search(r'(orgduckdb-\d+)', exec("mvn -f %s nexus-staging:rc-list" % (pom)).decode('utf8')).groups()[0]
-exec("mvn -f %s nexus-staging:rc-close -DstagingRepositoryId=%s" % (pom, repo_id))
-exec("mvn -f %s nexus-staging:rc-release -DstagingRepositoryId=%s" % (pom, repo_id))
+# # this list has horrid output, lets try to parse. What we want starts with orgduckdb- and then a number
+# repo_id = re.search(r'(orgduckdb-\d+)', exec("mvn -f %s nexus-staging:rc-list" % (pom)).decode('utf8')).groups()[0]
+# exec("mvn -f %s nexus-staging:rc-close -DstagingRepositoryId=%s" % (pom, repo_id))
+# exec("mvn -f %s nexus-staging:rc-release -DstagingRepositoryId=%s" % (pom, repo_id))
 
 print("Done?")
