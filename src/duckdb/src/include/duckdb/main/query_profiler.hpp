@@ -11,6 +11,7 @@
 #include "duckdb/common/common.hpp"
 #include "duckdb/common/deque.hpp"
 #include "duckdb/common/enums/profiler_format.hpp"
+#include "duckdb/common/enums/explain_format.hpp"
 #include "duckdb/common/pair.hpp"
 #include "duckdb/common/profiler.hpp"
 #include "duckdb/common/reference_map.hpp"
@@ -28,23 +29,25 @@
 namespace duckdb {
 class ClientContext;
 class ExpressionExecutor;
+class ProfilingNode;
 class PhysicalOperator;
 class SQLStatement;
 
 struct OperatorInformation {
-	explicit OperatorInformation(double time_p = 0, idx_t elements_p = 0) : time(time_p), elements(elements_p) {
+	explicit OperatorInformation(double time_p = 0, idx_t elements_returned_p = 0, idx_t elements_scanned_p = 0)
+	    : time(time_p), elements_returned(elements_returned_p) {
 	}
 
 	double time;
-	idx_t elements;
+	idx_t elements_returned;
 	string name;
 
 	void AddTime(double n_time) {
 		this->time += n_time;
 	}
 
-	void AddElements(idx_t n_elements) {
-		this->elements += n_elements;
+	void AddReturnedElements(idx_t n_elements) {
+		this->elements_returned += n_elements;
 	}
 };
 
@@ -64,17 +67,21 @@ public:
 	                      int id);
 	DUCKDB_API OperatorInformation &GetOperatorInfo(const PhysicalOperator &phys_op);
 
-	static bool SettingEnabled(const MetricsType setting) {
-		return SettingSetFunctions::Enabled(ProfilingInfo::DefaultSettings(), setting);
+	~OperatorProfiler() {
 	}
 
-	~OperatorProfiler() {
+	ClientContext &context;
+
+	bool HasOperatorSetting(const MetricsType &metric) const {
+		return operator_settings.find(metric) != operator_settings.end();
 	}
 
 private:
 	//! Whether or not the profiler is enabled
 	bool enabled;
-	profiler_settings_t settings;
+	//! Sub-settings for the operator profiler
+	profiler_settings_t operator_settings;
+
 	//! The timer used to time the execution time of the individual Physical Operators
 	Profiler op;
 	//! The stack of Physical Operators that are currently active
@@ -101,7 +108,7 @@ private:
 public:
 	DUCKDB_API bool IsEnabled() const;
 	DUCKDB_API bool IsDetailedEnabled() const;
-	DUCKDB_API ProfilerPrintFormat GetPrintFormat() const;
+	DUCKDB_API ProfilerPrintFormat GetPrintFormat(ExplainFormat format = ExplainFormat::DEFAULT) const;
 	DUCKDB_API bool PrintOptimizerOutput() const;
 	DUCKDB_API string GetSaveLocation() const;
 
@@ -126,8 +133,9 @@ public:
 
 	//! return the printed as a string. Unlike ToString, which is always formatted as a string,
 	//! the return value is formatted based on the current print format (see GetPrintFormat()).
-	DUCKDB_API string ToString() const;
+	DUCKDB_API string ToString(ExplainFormat format = ExplainFormat::DEFAULT) const;
 
+	static InsertionOrderPreservingMap<string> JSONSanitize(const InsertionOrderPreservingMap<string> &input);
 	static string JSONSanitize(const string &text);
 	static string DrawPadded(const string &str, idx_t width);
 	DUCKDB_API string ToJSON() const;
