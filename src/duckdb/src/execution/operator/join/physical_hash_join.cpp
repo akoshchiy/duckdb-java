@@ -219,8 +219,7 @@ public:
 };
 
 unique_ptr<JoinHashTable> PhysicalHashJoin::InitializeHashTable(ClientContext &context) const {
-	auto result = make_uniq<JoinHashTable>(BufferManager::GetBufferManager(context), conditions, payload_types,
-	                                       join_type, rhs_output_columns);
+	auto result = make_uniq<JoinHashTable>(context, conditions, payload_types, join_type, rhs_output_columns);
 	if (!delim_types.empty() && join_type == JoinType::MARK) {
 		// correlated MARK join
 		if (delim_types.size() + 1 == conditions.size()) {
@@ -1261,7 +1260,7 @@ InsertionOrderPreservingMap<string> PhysicalHashJoin::ParamsToString() const {
 		result["Build Min"] = perfect_join_statistics.build_min.ToString();
 		result["Build Max"] = perfect_join_statistics.build_max.ToString();
 	}
-	result["Estimated Cardinality"] = StringUtil::Format("%llu", estimated_cardinality);
+	SetEstimatedCardinality(result, estimated_cardinality);
 	return result;
 }
 
