@@ -1,4 +1,5 @@
 #include "duckdb/storage/statistics/column_statistics.hpp"
+
 #include "duckdb/common/serializer/deserializer.hpp"
 #include "duckdb/common/serializer/serializer.hpp"
 
@@ -19,8 +20,7 @@ shared_ptr<ColumnStatistics> ColumnStatistics::CreateEmptyStats(const LogicalTyp
 
 void ColumnStatistics::Merge(ColumnStatistics &other) {
 	stats.Merge(other.stats);
-	if (distinct_stats) {
-		D_ASSERT(other.distinct_stats);
+	if (distinct_stats && other.distinct_stats) {
 		distinct_stats->Merge(*other.distinct_stats);
 	}
 }
@@ -48,8 +48,8 @@ void ColumnStatistics::UpdateDistinctStatistics(Vector &v, idx_t count) {
 	if (!distinct_stats) {
 		return;
 	}
-	auto &d_stats = (DistinctStatistics &)*distinct_stats;
-	d_stats.Update(v, count);
+	// We sample for non-integral types to save cost, and because integers are more likely to be join keys
+	distinct_stats->Update(v, count);
 }
 
 shared_ptr<ColumnStatistics> ColumnStatistics::Copy() const {

@@ -117,8 +117,11 @@ pom_template = """
         <version>1.6.14</version>
         <extensions>true</extensions>
         <configuration>
-         <serverId>ossrh</serverId>
-         <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <gpgArguments>
+            <arg>--no-tty</arg>
+          </gpgArguments>
        </configuration>
      </plugin>
    </plugins>

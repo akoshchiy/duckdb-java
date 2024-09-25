@@ -3016,15 +3016,14 @@ public class TestDuckDBJDBC {
         assertEquals("5", getSetting(conn, threads));
     }
 
-    // public static void test_invalid_config() throws Exception {
-    //     Properties info = new Properties();
-    //     info.put("invalid config name", "true");
+    public static void test_invalid_config() throws Exception {
+        Properties info = new Properties();
+        info.put("invalid config name", "true");
 
-    //     String message = assertThrows(() -> DriverManager.getConnection(JDBC_URL, info), SQLException.class);
+        String message = assertThrows(() -> DriverManager.getConnection(JDBC_URL, info), SQLException.class);
 
-    //     System.out.println(message);
-    //     assertTrue(message.contains("Unrecognized configuration property \"invalid config name\""));
-    // }
+        assertTrue(message.contains("The following options were not recognized: invalid config name"));
+    }
 
     public static void test_valid_but_local_config_throws_exception() throws Exception {
         Properties info = new Properties();
